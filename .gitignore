@@ -1,0 +1,23 @@
+AGENTS.md
+
+# Dependencies and build output
+node_modules/
+dist/
+*.zip
+*.crx
+*.pem
+
+# Test output
+coverage/
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+# Local environment and editor files
+.env
+.env.*
+.DS_Store
+*.log
+.vscode/
+.idea/
