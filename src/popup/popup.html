@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>TypeTwice</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup">
+      <header class="head">
+        <img src="icons/icon-32.png" alt="" width="20" height="20" />
+        <h1>TypeTwice</h1>
+        <label class="switch">
+          <input id="enabled" type="checkbox" role="switch" />
+          <span>On</span>
+        </label>
+      </header>
+      <p id="paused" class="paused" hidden>Paused. Sites open without a gate.</p>
+
+      <section aria-labelledby="today-title">
+        <h2 id="today-title">Today</h2>
+        <dl class="stats">
+          <div><dt>Gates shown</dt><dd id="stat-shown">0</dd></div>
+          <div><dt>Opened anyway</dt><dd id="stat-opened">0</dd></div>
+          <div><dt>Chose to go back</dt><dd id="stat-declined">0</dd></div>
+        </dl>
+      </section>
+
+      <section aria-labelledby="sites-title">
+        <h2 id="sites-title">Sites</h2>
+        <ul id="sites" class="sites"></ul>
+      </section>
+
+      <p id="error" class="error" role="alert" hidden></p>
+      <button id="open-settings" type="button" class="primary">Settings</button>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
