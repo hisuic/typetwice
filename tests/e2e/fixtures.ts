@@ -28,7 +28,8 @@ export interface ExtensionHelpers {
   enableSite(name: string): Promise<void>;
   setTiming(minDurationSeconds: number, unlockDurationMinutes?: number): Promise<void>;
   stats(): Promise<{ shown: number; opened: number; declined: number }>;
-  expireGrants(options?: { refresh?: boolean }): Promise<void>;
+  /** Ends every unlock now, as if its time had run out (the open tabs learn the new expiry). */
+  expireGrants(): Promise<void>;
 }
 
 export const test = base.extend<Fixtures>({
@@ -63,7 +64,7 @@ export const test = base.extend<Fixtures>({
     let id: string | undefined;
     await use(async () => {
       const existing = context.serviceWorkers().find((w) => w.url().endsWith('/background.js'));
-      if (existing) {
+      if (existing && (await existing.evaluate(() => true).catch(() => false))) {
         id = new URL(existing.url()).host;
         return existing;
       }
@@ -125,17 +126,18 @@ export const test = base.extend<Fixtures>({
         });
         return values[0] ?? { shown: 0, opened: 0, declined: 0 };
       },
-      async expireGrants({ refresh = true } = {}) {
-        await (await worker()).evaluate(async (refreshTabs) => {
+      async expireGrants() {
+        await (await worker()).evaluate(async () => {
           const stored = await chrome.storage.session.get('grants');
           const grants = (stored.grants ?? {}) as Record<string, number>;
           for (const siteId of Object.keys(grants)) grants[siteId] = Date.now() - 1;
           await chrome.storage.session.set({ grants });
-          if (!refreshTabs) return;
           for (const tab of await chrome.tabs.query({})) {
-            if (tab.id !== undefined) chrome.tabs.sendMessage(tab.id, { type: 'REFRESH' }, { frameId: 0 }).catch(() => {});
+            if (tab.id !== undefined) await chrome.tabs.sendMessage(tab.id, { type: 'REFRESH' }, { frameId: 0 }).catch(() => {});
           }
-        }, refresh);
+        });
+        // Each tab re-checks asynchronously after the refresh message.
+        await new Promise((resolve) => setTimeout(resolve, 300));
       },
     };
     await use(helpers);
@@ -147,7 +149,11 @@ export const test = base.extend<Fixtures>({
  * headless Chromium can hit-test cross-process iframes (the gate frame)
  * against a different size than the page after a tab switch.
  */
-const WINDOW = { viewport: null } as const;
+const WINDOW = {
+  viewport: null,
+  // Playwright turns the back/forward cache off by default; the gate has to handle it.
+  ignoreDefaultArgs: ['--disable-back-forward-cache'],
+};
 const WINDOW_ARGS = ['--window-size=1280,800'];
 
 async function launch(userDataDir: string, extensionDir: string): Promise<BrowserContext> {
