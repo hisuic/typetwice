@@ -1,0 +1,29 @@
+{
+  "name": "typetwice",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A browser extension that asks you to type a short English sentence before opening the social sites you choose.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "tsx scripts/build.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "npm run build && playwright test",
+    "check:privacy": "tsx scripts/check-privacy.ts",
+    "verify": "npm run typecheck && npm test && npm run build && npm run check:privacy"
+  },
+  "dependencies": {
+    "tldts": "^7.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@types/chrome": "^0.3.7",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.28.0",
+    "tsx": "^4.20.0",
+    "typescript": "^7.0.0",
+    "vitest": "^5.0.0"
+  }
+}
