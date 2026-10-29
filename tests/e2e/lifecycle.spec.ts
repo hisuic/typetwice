@@ -206,3 +206,34 @@ test('stats count shown, opened and go back per challenge, not closed tabs', asy
   await expect(popup.locator('#stat-opened')).toHaveText('1');
   await expect(popup.locator('#stat-declined')).toHaveText('1');
 });
+
+test('turning the extension off under an open gate shows a recovery screen, not a dead cover', async ({
+  context,
+  ext,
+  extensionId,
+}) => {
+  await ext.enableSite('Instagram');
+  const gated = await context.newPage();
+  await gated.goto('https://x.com/home');
+  await expectGate(gated);
+  const unlocked = await context.newPage();
+  await unlocked.goto('https://www.instagram.com/');
+  await unlock(unlocked);
+
+  const extensions = await context.newPage();
+  await extensions.goto('chrome://extensions');
+  await extensions.evaluate((id) => chrome.management.setEnabled(id, false), extensionId);
+
+  const overlay = gated.locator('typetwice-gate');
+  await expect(overlay.getByRole('heading', { name: 'TypeTwice was updated or turned off' })).toBeVisible();
+  await expect(overlay.getByRole('button', { name: 'Reload page' })).toBeVisible();
+  await overlay.getByRole('button', { name: 'Reload page' }).click();
+  await expect(gated.locator('#timeline')).toBeVisible();
+  await expectNoGate(gated);
+
+  // A page that was already open is left alone when the user moves on.
+  await unlocked.evaluate(() => history.pushState({}, '', '/explore'));
+  await unlocked.waitForTimeout(500);
+  await expectNoGate(unlocked);
+  expect(await unlocked.evaluate(() => document.body.inert)).toBe(false);
+});
