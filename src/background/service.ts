@@ -206,7 +206,8 @@ export class GateService {
       return { result: { ok: true, allowedUntil: grant.allowedUntil }, site: grant.created ? site : undefined };
     });
 
-    if (outcome.site) await this.deps.browser.refreshTabs(outcome.site.domains);
+    // Other tabs of the site drop their gates; do not make this tab wait for them.
+    if (outcome.site) this.refreshInBackground(outcome.site.domains);
     return outcome.result;
   }
 
@@ -375,7 +376,7 @@ export class GateService {
 
   async handlePermissionsChanged(): Promise<void> {
     await this.syncRegistrations(true);
-    await this.deps.browser.refreshTabs();
+    this.refreshInBackground();
   }
 
   // ---------------------------------------------------------------------------
@@ -392,13 +393,18 @@ export class GateService {
       return { ...result, report };
     });
     if ('error' in outcome) return { ok: false, error: outcome.error, view: await this.getSettingsView() };
-    if (outcome.resync) await this.deps.browser.refreshTabs();
+    if (outcome.resync) this.refreshInBackground();
     const notices = [outcome.notice];
     if (outcome.report.failed > 0) {
       notices.push(`${outcome.report.failed} open tab(s) could not be protected yet. Reload them to show the gate.`);
     }
     const notice = notices.filter(Boolean).join(' ') || undefined;
     return { ok: true, view: await this.getSettingsView(), notice };
+  }
+
+  /** Tabs that are frozen or slow must not hold up the request that changed something. */
+  private refreshInBackground(domains?: readonly string[]): void {
+    this.deps.browser.refreshTabs(domains).catch(() => undefined);
   }
 
   private async syncLocked(inject: boolean): Promise<InjectionReport> {
