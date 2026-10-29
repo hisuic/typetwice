@@ -26,6 +26,23 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["storage", "scripting"],
-  "optional_host_permissions": ["*://*/*"]
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  "optional_host_permissions": [
+    "*://*/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "gate.html",
+        "gate.js",
+        "gate.css"
+      ],
+      "matches": [
+        "*://*/*"
+      ]
+    }
+  ]
 }
