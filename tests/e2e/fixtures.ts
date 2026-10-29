@@ -142,13 +142,22 @@ export const test = base.extend<Fixtures>({
   },
 });
 
+/**
+ * Use the real window size instead of viewport emulation: with emulation,
+ * headless Chromium can hit-test cross-process iframes (the gate frame)
+ * against a different size than the page after a tab switch.
+ */
+const WINDOW = { viewport: null } as const;
+const WINDOW_ARGS = ['--window-size=1280,800'];
+
 async function launch(userDataDir: string, extensionDir: string): Promise<BrowserContext> {
   if (BROWSER === 'chrome') {
     // Branded Chrome ignores --load-extension; load the unpacked copy over CDP instead.
     const context = await chromium.launchPersistentContext(userDataDir, {
       channel: 'chrome',
       headless: true,
-      args: ['--enable-unsafe-extension-debugging'],
+      ...WINDOW,
+      args: ['--enable-unsafe-extension-debugging', ...WINDOW_ARGS],
     });
     const session = await context.browser()!.newBrowserCDPSession();
     await session.send('Extensions.loadUnpacked' as never, { path: extensionDir } as never);
@@ -158,7 +167,8 @@ async function launch(userDataDir: string, extensionDir: string): Promise<Browse
     channel: BROWSER === 'chromium' ? 'chromium' : undefined,
     executablePath: BROWSER === 'brave' ? BRAVE_PATH : undefined,
     headless: true,
-    args: [`--disable-extensions-except=${extensionDir}`, `--load-extension=${extensionDir}`],
+    ...WINDOW,
+    args: [`--disable-extensions-except=${extensionDir}`, `--load-extension=${extensionDir}`, ...WINDOW_ARGS],
   });
 }
 
