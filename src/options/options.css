@@ -72,7 +72,7 @@ h2 {
   border-top: 1px solid var(--line);
 }
 
-.row:first-of-type {
+h2 + .row {
   border-top: 0;
 }
 
@@ -371,6 +371,12 @@ button.danger {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+button.primary:disabled {
+  background: #2c313a;
+  color: var(--muted);
+  opacity: 1;
 }
 
 button:focus-visible,
