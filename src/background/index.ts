@@ -1,3 +1,4 @@
+import { GATE_PAGE } from '../shared/frame-messages';
 import { CONTENT_REQUESTS, type Envelope, type SettingsPatch } from '../shared/protocol';
 import { logWarning, safeErrorMessage } from '../shared/log';
 import { chromeBrowser } from './browser';
@@ -54,11 +55,19 @@ async function handleRequest(message: Record<string, unknown>, sender: chrome.ru
   const type = typeof message?.type === 'string' ? message.type : '';
 
   if (CONTENT_REQUESTS.has(type as never)) {
-    // The site is always derived from the sender, never taken from the message.
-    const info: SenderInfo = { tabId: sender.tab?.id, frameId: sender.frameId, url: sender.url };
+    if (type === 'OPEN_OPTIONS') {
+      await chrome.runtime.openOptionsPage();
+      return { ok: true };
+    }
+    if (type === 'GET_GATE_STATE') {
+      // From the content script in the page's top frame.
+      return service.getGateState({ tabId: sender.tab?.id, frameId: sender.frameId, url: sender.url });
+    }
+    // Challenges are only handled for the gate page embedded in a tab. The site is
+    // always derived from that tab's top-level URL, never taken from the message.
+    const info = gateSender(sender);
+    if (!info) throw new Error('This request is only available to the gate page.');
     switch (type) {
-      case 'GET_GATE_STATE':
-        return service.getGateState(info);
       case 'START_CHALLENGE':
         return service.startChallenge(info);
       case 'CHALLENGE_SHOWN':
@@ -71,9 +80,6 @@ async function handleRequest(message: Record<string, unknown>, sender: chrome.ru
         });
       case 'DECLINE_CHALLENGE':
         return service.declineChallenge(info, String(message.challengeId));
-      case 'OPEN_OPTIONS':
-        await chrome.runtime.openOptionsPage();
-        return { ok: true };
     }
   }
 
@@ -99,6 +105,11 @@ async function handleRequest(message: Record<string, unknown>, sender: chrome.ru
       return service.restoreBundledCorpus();
   }
   throw new Error('Unknown request.');
+}
+
+function gateSender(sender: chrome.runtime.MessageSender): SenderInfo | null {
+  if (!sender.url?.startsWith(chrome.runtime.getURL(GATE_PAGE)) || sender.tab?.id === undefined) return null;
+  return { tabId: sender.tab.id, frameId: 0, url: sender.tab.url };
 }
 
 function readPatch(raw: unknown): SettingsPatch {
