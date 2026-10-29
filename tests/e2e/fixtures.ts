@@ -34,26 +34,9 @@ export interface ExtensionHelpers {
 
 export const test = base.extend<Fixtures>({
   context: async ({}, use) => {
-    const extensionDir = mkdtempSync(join(tmpdir(), 'typetwice-ext-'));
-    cpSync(resolve('dist'), extensionDir, { recursive: true });
-    const manifestPath = join(extensionDir, 'manifest.json');
-    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-    manifest.host_permissions = TEST_HOSTS.map((host) => `*://*.${host}/*`);
-    writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-
+    const extensionDir = prepareExtension();
     const userDataDir = mkdtempSync(join(tmpdir(), 'typetwice-profile-'));
     const context = await launch(userDataDir, extensionDir);
-    await context.route(ROUTED, (route) => {
-      const url = new URL(route.request().url());
-      const headers: Record<string, string> = { 'content-type': 'text/html; charset=utf-8' };
-      if (url.pathname.startsWith('/strict')) {
-        headers['content-security-policy'] =
-          "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-src 'none'; child-src 'none'; require-trusted-types-for 'script'";
-        headers['cross-origin-embedder-policy'] = 'require-corp';
-        headers['cross-origin-opener-policy'] = 'same-origin';
-      }
-      return route.fulfill({ status: 200, headers, body: SITE_HTML.replace('Fixture site', `${url.host}${url.pathname}`) });
-    });
     await use(context);
     await context.close();
     rmSync(userDataDir, { recursive: true, force: true });
@@ -156,7 +139,35 @@ const WINDOW = {
 };
 const WINDOW_ARGS = ['--window-size=1280,800'];
 
-async function launch(userDataDir: string, extensionDir: string): Promise<BrowserContext> {
+/** Copies dist/ and declares the test hosts so permission requests resolve without a prompt. */
+export function prepareExtension(): string {
+  const extensionDir = mkdtempSync(join(tmpdir(), 'typetwice-ext-'));
+  cpSync(resolve('dist'), extensionDir, { recursive: true });
+  const manifestPath = join(extensionDir, 'manifest.json');
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  manifest.host_permissions = TEST_HOSTS.map((host) => `*://*.${host}/*`);
+  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  return extensionDir;
+}
+
+/** Launches the browser with the extension and serves the fixture page for the test hosts. */
+export async function launch(userDataDir: string, extensionDir: string): Promise<BrowserContext> {
+  const context = await launchBrowser(userDataDir, extensionDir);
+  await context.route(ROUTED, (route) => {
+    const url = new URL(route.request().url());
+    const headers: Record<string, string> = { 'content-type': 'text/html; charset=utf-8' };
+    if (url.pathname.startsWith('/strict')) {
+      headers['content-security-policy'] =
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-src 'none'; child-src 'none'; require-trusted-types-for 'script'";
+      headers['cross-origin-embedder-policy'] = 'require-corp';
+      headers['cross-origin-opener-policy'] = 'same-origin';
+    }
+    return route.fulfill({ status: 200, headers, body: SITE_HTML.replace('Fixture site', `${url.host}${url.pathname}`) });
+  });
+  return context;
+}
+
+async function launchBrowser(userDataDir: string, extensionDir: string): Promise<BrowserContext> {
   if (BROWSER === 'chrome') {
     // Branded Chrome ignores --load-extension; load the unpacked copy over CDP instead.
     const context = await chromium.launchPersistentContext(userDataDir, {
