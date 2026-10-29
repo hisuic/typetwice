@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TypeTwice settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="page-head">
+        <img src="icons/icon-48.png" alt="" width="32" height="32" />
+        <div>
+          <h1>TypeTwice</h1>
+          <p class="lede">Type one short sentence before a site opens, and decide whether you still want to go in.</p>
+        </div>
+      </header>
+
+      <p id="notice" class="notice" role="status" hidden></p>
+      <p id="load-error" class="error" role="alert" hidden></p>
+
+      <section class="card" aria-labelledby="general-title">
+        <h2 id="general-title">General</h2>
+        <label class="row switch-row">
+          <span>
+            <strong>Gate enabled</strong>
+            <small>Turning this off removes the gate from every site until you turn it on again.</small>
+          </span>
+          <input id="enabled" type="checkbox" role="switch" />
+        </label>
+
+        <div class="row">
+          <label for="min-duration">
+            <strong>Minimum typing time</strong>
+            <small>Seconds the sentence field must be focused, counted from your first keystroke. 5–300.</small>
+          </label>
+          <span class="number">
+            <input id="min-duration" type="number" min="5" max="300" step="1" inputmode="numeric" />
+            <span>sec</span>
+          </span>
+        </div>
+
+        <div class="row">
+          <label for="unlock-duration">
+            <strong>Unlock time</strong>
+            <small>How long a site stays open after “Open anyway”, shared by all its tabs. 1–60.</small>
+          </label>
+          <span class="number">
+            <input id="unlock-duration" type="number" min="1" max="60" step="1" inputmode="numeric" />
+            <span>min</span>
+          </span>
+        </div>
+        <p class="explain">
+          The unlock time is not a strict viewing limit. When it runs out, TypeTwice does not interrupt the page you
+          are reading. It asks again the next time you come back to the tab, reload it, or move to another page on that
+          site. Changes apply to new challenges; a sentence already on screen keeps its own times.
+        </p>
+        <p id="general-error" class="error" role="alert" hidden></p>
+      </section>
+
+      <section class="card" aria-labelledby="sites-title">
+        <h2 id="sites-title">Sites</h2>
+        <p class="explain">
+          TypeTwice asks for access to a site only when you turn it on, and gives the access back when you turn the
+          site off or remove it. A site and all of its subdomains share one unlock.
+        </p>
+        <ul id="sites" class="sites"></ul>
+
+        <form id="add-site" class="add-site" novalidate>
+          <label for="site-input"><strong>Add a site</strong></label>
+          <div class="add-row">
+            <input id="site-input" type="text" placeholder="example.com" autocomplete="off" spellcheck="false" />
+            <button id="add-button" type="submit" class="primary">Add and allow access</button>
+          </div>
+          <p id="site-preview" class="preview" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="card" aria-labelledby="messages-title">
+        <h2 id="messages-title">Sentences</h2>
+        <p id="corpus-status" class="corpus-status"></p>
+        <p class="explain">
+          Use a UTF-8 text file with one English sentence per line. Blank lines are skipped and duplicates are removed.
+          Curly quotes, dashes, the ellipsis and special spaces are converted to plain ASCII; any other character outside
+          printable ASCII rejects the whole file, so nothing is imported by halves.
+        </p>
+        <div class="file-row">
+          <label class="file-button">
+            <input id="file-input" type="file" accept=".txt,text/plain" />
+            <span>Choose a .txt file…</span>
+          </label>
+          <button id="restore-button" type="button">Restore bundled sentences</button>
+        </div>
+        <div id="import-preview" class="import-preview" hidden></div>
+        <p class="explain">
+          TypeTwice keeps its own copy of the imported sentences. It does not watch the original file, so import it
+          again after you edit it.
+        </p>
+      </section>
+
+      <section class="card" aria-labelledby="today-title">
+        <h2 id="today-title">Today</h2>
+        <dl class="stats">
+          <div><dt>Gates shown</dt><dd id="stat-shown">0</dd></div>
+          <div><dt>Opened anyway</dt><dd id="stat-opened">0</dd></div>
+          <div><dt>Chose to go back</dt><dd id="stat-declined">0</dd></div>
+        </dl>
+        <p class="explain">Counted on this device only, for your local date. Closing a tab is not counted as going back.</p>
+      </section>
+
+      <section class="card" aria-labelledby="about-title">
+        <h2 id="about-title">How it works</h2>
+        <ul class="facts">
+          <li>Everything is stored in this browser. There is no account and nothing is sent to a server.</li>
+          <li>
+            Unlocks live only for the browser session. Restarting the browser or reloading or updating the extension
+            clears them, and the next visit asks for a new sentence.
+          </li>
+          <li>
+            The gate is a speed bump, not a blocker. It covers the page but does not stop the site from loading, and
+            sound or video behind it may keep playing.
+          </li>
+        </ul>
+      </section>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>
