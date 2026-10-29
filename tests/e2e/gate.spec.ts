@@ -178,6 +178,65 @@ test('keeps keystrokes, clicks and scrolling away from the page and restores it 
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 });
 
+test('display and unlock state follow the input after editing, selection replace, undo and redo', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto('https://x.com/home');
+  await expectGate(page);
+  const sentence = await sentenceOf(page);
+  const open = gate(page).getByRole('button', { name: /Open anyway/ });
+
+  /** The drawn characters must match a strict comparison of the textarea's real value. */
+  const expectConsistent = async () => {
+    const value = await gate(page).locator('textarea').inputValue();
+    let correct = 0;
+    let incorrect = 0;
+    for (let i = 0; i < Math.min(value.length, sentence.length); i += 1) {
+      if (value[i] === sentence[i]) correct += 1;
+      else incorrect += 1;
+    }
+    await expect(gate(page).locator('.c.correct')).toHaveCount(correct);
+    await expect(gate(page).locator('.c.incorrect')).toHaveCount(incorrect);
+    await expect(gate(page).locator('.c.extra')).toHaveCount(Math.max(0, value.length - sentence.length));
+    return value;
+  };
+
+  await typeSentence(page);
+  await page.waitForTimeout(5_200);
+  await expect(open).toBeEnabled();
+
+  // Move left and insert a stray character in the middle.
+  for (let i = 0; i < 5; i += 1) await page.keyboard.press('ArrowLeft');
+  await page.keyboard.type('#');
+  expect(await expectConsistent()).not.toBe(sentence);
+  await expect(open).toBeDisabled();
+
+  // Forward-delete it again with Delete after stepping back over it.
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('Delete');
+  expect(await expectConsistent()).toBe(sentence);
+  await expect(open).toBeEnabled();
+
+  // Replace a selection made with Shift+Arrow.
+  await page.keyboard.press('Shift+ArrowLeft');
+  await page.keyboard.press('Shift+ArrowLeft');
+  await page.keyboard.type('ZZ');
+  await expectConsistent();
+  await expect(open).toBeDisabled();
+
+  // Undo and redo go through the browser's own history (its step size is the browser's
+  // choice); after every step the display follows the real value.
+  let value = '';
+  for (let step = 0; step < 4 && value !== sentence; step += 1) {
+    await page.keyboard.press('ControlOrMeta+Z');
+    value = await expectConsistent();
+  }
+  expect(value).toBe(sentence);
+  await expect(open).toBeEnabled();
+  await page.keyboard.press('ControlOrMeta+Shift+Z');
+  expect(await expectConsistent()).not.toBe(sentence);
+  await expect(open).toBeDisabled();
+});
+
 test('works on pages with a strict CSP, Trusted Types and COEP', async ({ context }) => {
   const page = await context.newPage();
   await page.goto('https://x.com/strict');
