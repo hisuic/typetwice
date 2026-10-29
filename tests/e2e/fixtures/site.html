@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fixture site</title>
+    <style>
+      body { font-family: sans-serif; margin: 16px; }
+      .tall { height: 4000px; background: linear-gradient(#fff, #bbb); }
+    </style>
+  </head>
+  <body>
+    <h1 id="timeline">TIMELINE CONTENT</h1>
+    <textarea id="compose" aria-label="Compose"></textarea>
+    <div id="dm" contenteditable="true" style="border: 1px solid #999; min-height: 40px">Draft message</div>
+    <button id="like" type="button">Like</button>
+    <a id="spa-link" href="/spa">Next page</a>
+    <div class="tall"></div>
+    <script>
+      // Stand-ins for a social site: keyboard shortcuts, a like button, client-side routing.
+      window.pageKeys = 0;
+      window.likes = 0;
+      window.pageShows = [];
+      document.addEventListener('keydown', () => window.pageKeys++, true);
+      window.addEventListener('keydown', () => window.pageKeys++);
+      document.getElementById('like').addEventListener('click', () => window.likes++);
+      document.getElementById('spa-link').addEventListener('click', (event) => {
+        event.preventDefault();
+        history.pushState({}, '', '/spa/' + Date.now());
+      });
+      window.addEventListener('pageshow', (event) => window.pageShows.push(event.persisted));
+    </script>
+  </body>
+</html>
