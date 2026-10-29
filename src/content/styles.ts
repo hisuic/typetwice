@@ -9,8 +9,6 @@ export const OVERLAY_CSS = `
   align-items: center;
   justify-content: center;
   padding: 24px;
-  overflow: auto;
-  overscroll-behavior: contain;
   background: #16181d;
   color: #a7adb8;
   font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -28,7 +26,11 @@ export const OVERLAY_CSS = `
   color-scheme: dark;
 }
 
-.panel { max-width: 520px; }
+.panel {
+  max-width: 520px;
+  max-height: 100%;
+  overflow: auto;
+}
 
 .title {
   margin: 0 0 8px;

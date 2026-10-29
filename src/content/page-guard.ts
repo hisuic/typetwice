@@ -15,7 +15,6 @@ const HOST_STYLES: ReadonlyArray<[string, string]> = [
   ['padding', '0'],
   ['border', '0'],
   ['display', 'block'],
-  ['overflow', 'hidden'],
   ['z-index', '2147483647'],
   ['background-color', '#16181d'],
   ['color-scheme', 'dark'],
