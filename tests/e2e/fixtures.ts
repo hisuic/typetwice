@@ -163,6 +163,7 @@ async function launch(userDataDir: string, extensionDir: string): Promise<Browse
       channel: 'chrome',
       headless: true,
       ...WINDOW,
+      ignoreDefaultArgs: [...WINDOW.ignoreDefaultArgs, '--disable-extensions'],
       args: ['--enable-unsafe-extension-debugging', ...WINDOW_ARGS],
     });
     const session = await context.browser()!.newBrowserCDPSession();
